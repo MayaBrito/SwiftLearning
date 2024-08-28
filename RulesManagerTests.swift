@@ -45,7 +45,7 @@ class RulesManagerTests: XCTestCase {
         )
 
         manager.addRule(rule1)
-        let fetchedRule1 = manager.getRule(byID: rule1.ruleID)
+        let fetchedRule1 = manager.getRule(byID: rule1.ruleID ?? "")
         XCTAssertNotNil(fetchedRule1, "Rule should be retrieved")
         XCTAssertEqual(fetchedRule1?.key, "com.apple.dt.Xcode", "The key should match")
     }
@@ -80,7 +80,7 @@ class RulesManagerTests: XCTestCase {
         )
 
         manager.addRule(rule2)
-        let fetchedRule2 = manager.getRule(byID: rule2.ruleID)
+        let fetchedRule2 = manager.getRule(byID: rule2.ruleID ?? "")
         XCTAssertNotNil(fetchedRule2, "Rule should be retrieved")
         XCTAssertEqual(fetchedRule2?.key, "com.apple.dt.CodeRunner", "The key should match")
     }
@@ -94,18 +94,76 @@ class RulesManagerTests: XCTestCase {
 
     // Test case 4: Remove an existing rule
     func testRemoveExistingRule() {
-        let ruleID = "A434FBF5-A0D9-4040-BEF1-285D353C7CC5"
-        manager.removeRule(byID: ruleID)
-        let fetchedRule = manager.getRule(byID: ruleID)
-        XCTAssertNil(fetchedRule, "Rule should be nil after removal")
+        let csInfo: [String: Any] = [
+            "signatureIdentifier": "com.apple.dt.CodeRunner",
+            "signatureStatus": "0",
+            "signatureSigner": "2",
+            "signatureAuthorities": [
+                "Apple Mac OS Application Signing",
+                "Apple Worldwide Developer Relations Certification Authority",
+                "Apple Root CA"
+            ]
+        ]
+        
+        let rule = Rule(
+            uuid: "B634FBF5-A0D9-4040-BEF1-285D353C7CC6",
+            key: "com.apple.dt.CodeRunner",
+            path: "/Applications/CodeRunner.app",
+            name: "CodeRunner",
+            endpointAddr: "192.168.1.1",
+            endpointPort: "8080",
+            pid: 12345,
+            type: 3,
+            protocol: 2,
+            action: 0,
+            scope: 1,
+            csInfo: csInfo,
+            isEndpointAddrRegex: true
+        )
+        
+        manager.addRule(rule)
+        let removedRule = manager.removeRule(byID: rule.ruleID ?? "")
+        XCTAssertNotNil(removedRule, "The removed rule must not be nil")
+        
+        let fetchedRuleAfterRemoval = manager.getRule(byID: rule.ruleID ?? "")
+        XCTAssertNil(fetchedRuleAfterRemoval, "Rule must be nil after removal")
     }
 
     // Test case 5: Try to remove a rule that has already been removed
     func testRemoveAlreadyRemovedRule() {
-        let ruleID = "A434FBF5-A0D9-4040-BEF1-285D353C7CC5"
-        manager.removeRule(byID: ruleID)
-        let fetchedRule = manager.getRule(byID: ruleID)
-        XCTAssertNil(fetchedRule, "Rule should remain nil after repeated removal attempts")
+        let csInfo: [String: Any] = [
+            "signatureIdentifier": "com.apple.dt.Xcode",
+            "signatureStatus": "0",
+            "signatureSigner": "2",
+            "signatureAuthorities": [
+                "Apple Mac OS Application Signing",
+                "Apple Worldwide Developer Relations Certification Authority",
+                "Apple Root CA"
+            ]
+        ]
+        
+        let rule = Rule(
+            uuid: "A434FBF5-A0D9-4040-BEF1-285D353C7CC5",
+            key: "com.apple.dt.Xcode",
+            path: "/Applications/Xcode.app",
+            name: "Xcode",
+            endpointAddr: "10.456.65.2",
+            endpointPort: "*",
+            pid: 0,
+            type: 2,
+            protocol: 1,
+            action: 1,
+            scope: 0,
+            csInfo: csInfo,
+            isEndpointAddrRegex: false
+        )
+
+        manager.addRule(rule)
+        let firstRemoval = manager.removeRule(byID: rule.ruleID ?? "")
+        XCTAssertNotNil(firstRemoval, "The first removal should return the removed rule")
+        
+        let secondRemoval = manager.removeRule(byID: rule.ruleID ?? "")
+        XCTAssertNil(secondRemoval, "The second removal should return nil, as the rule has already been removed.")
     }
 
     // Test case 6: Add another rule, retrieve it, print its description, and remove it
@@ -139,12 +197,14 @@ class RulesManagerTests: XCTestCase {
 
         manager.addRule(rule1)
         
-        if let fetchedRule1 = manager.getRule(byID: rule1.ruleID) {
+        if let fetchedRule1 = manager.getRule(byID: rule1.ruleID ?? "") {
             print("Test 6 - Rule Description:\n\(fetchedRule1.description())")
         }
         
-        manager.removeRule(byID: rule1.ruleID)
-        let fetchedRuleAfterRemoval = manager.getRule(byID: rule1.ruleID)
-        XCTAssertNil(fetchedRuleAfterRemoval, "Rule should not be found after removal")
+        let removedRule = manager.removeRule(byID: rule1.ruleID ?? "")
+        XCTAssertNotNil(removedRule, "Rule should be removed successfully")
+        
+        let fetchedRuleAfterRemoval = manager.getRule(byID: rule1.ruleID ?? "")
+        XCTAssertNil(fetchedRuleAfterRemoval, "Rule must be nil after removal")
     }
 }
