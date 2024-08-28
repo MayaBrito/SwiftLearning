@@ -8,12 +8,8 @@ class RulesManager {
         print("Rule added with ID: \(rule.ruleID)")
     }
     
-    func removeRule(byID ruleID: String) {
-        if let removedRule = rules.removeValue(forKey: ruleID) {
-            print("Rule removed with ID: \(removedRule.ruleID)")
-        } else {
-            print("No rule found with ID: \(ruleID)")
-        }
+    func removeRule(byID ruleID: String) -> Rule? {
+        return rules.removeValue(forKey: ruleID)
     }
     
     func getRule(byID ruleID: String) -> Rule? {
